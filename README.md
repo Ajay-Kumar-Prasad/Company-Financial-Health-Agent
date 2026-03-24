@@ -51,7 +51,7 @@ User Query
 │            │  │  snapshots)  │
 └────────────┘  └──────────────┘
 ```
-![alt text](image-1.png)
+![alt text](./assets/image-1.png)
 
 
 ---
@@ -117,7 +117,7 @@ financial-health-agent/
 
 ## 🚀 Build Roadmap
 
-![alt text](image.png)
+![alt text](./assets/image.png)
 
 ### Phase 1 — Project Setup (~1 hour)
 - Create Python project structure
