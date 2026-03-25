@@ -1,0 +1,4 @@
+google-adk
+fastmcp
+requests
+google-cloud-bigquery
