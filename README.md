@@ -1,102 +1,114 @@
 # 🏦 Company Financial Health Agent
 
-> An AI agent built with Google ADK and Model Context Protocol (MCP) that retrieves live financial data and generates a structured health scorecard for any public company.
+> An AI agent built with **Google ADK** and **Model Context Protocol (MCP)** that retrieves live financial data from the Financial Modeling Prep API and produces a structured, analyst-grade **Financial Health Scorecard** for any public company — complete with peer benchmarking, YoY growth analysis, and BigQuery-backed historical tracking.
 
 ---
 
 ## 📌 Project Overview
 
-This project was built as part of the **GenAI Academy APAC Edition — Track 2: Connect AI agents to real-world data and tools using Model Context Protocol (MCP)**.
+Built for the **GenAI Academy APAC Edition — Track 2: Connect AI agents to real-world data and tools using MCP**.
 
-The agent accepts a company name or ticker (e.g. "Analyse Apple" or "How is Infosys doing?"), fetches structured financial data from the Financial Modeling Prep (FMP) API via an MCP server, optionally caches historical snapshots in BigQuery, and returns a plain-English **Financial Health Scorecard** covering profitability, liquidity, leverage, and growth.
+The agent accepts a natural-language query (e.g. *"Is Apple financially healthy?"* or *"Analyse Infosys vs its peers"*), resolves the ticker, fetches structured financial data through a dedicated MCP server, and returns a **five-dimension scorecard** covering Profitability, Liquidity, Leverage, Growth, and Cash Flow — benchmarked against sector peers.
 
 ---
 
 ## 🎯 Problem Statement
 
-> Build an AI agent that uses the Model Context Protocol (MCP) to connect to one external tool or data source, retrieve information, and use that information in its response.
+> Build an AI agent that uses MCP to connect to one external tool or data source, retrieve information, and use that information in its response.
 
-This agent satisfies all four requirements:
-1. ✅ Implemented using **Google ADK**
-2. ✅ Uses **MCP** to connect to the FMP financial data API
-3. ✅ Retrieves structured financial data (income statement, balance sheet, key ratios)
-4. ✅ Uses retrieved data to generate a structured health scorecard response
+| Requirement | Implementation |
+|---|---|
+| Implemented using Google ADK | ✅ `agent/agent.py` uses `google-adk` |
+| Uses MCP to connect to a data source | ✅ FastMCP server exposing 5 tools |
+| Retrieves structured data | ✅ Income statement, balance sheet, cash flow, ratios, peer data |
+| Uses retrieved data to generate response | ✅ Gemini 2.5 Flash produces a structured scorecard |
 
 ---
 
 ## 🏗️ System Architecture
 
 ```
-User Query
-    │
-    ▼
-┌─────────────────────────────┐
-│      ADK Agent (Python)     │  ← Orchestrates tools, reasons, generates response
-└─────────────┬───────────────┘
-              │
-              ▼
-┌─────────────────────────────┐
-│   MCP Client (ADK built-in) │  ← Translates tool calls to MCP protocol
-└─────────────┬───────────────┘
-              │  IAM service-to-service auth
-              ▼
-┌─────────────────────────────┐
-│   MCP Server (Cloud Run)    │  ← Exposes tools: get_financials, get_ratios
-└──────┬──────────────┬───────┘
-       │              │
-       ▼              ▼
-┌────────────┐  ┌──────────────┐
-│  FMP API   │  │   BigQuery   │
-│ (free tier)│  │  (cache +    │
-│            │  │  snapshots)  │
-└────────────┘  └──────────────┘
-```
-![alt text](./assets/image.png)
-
-
----
-
-## 📊 What the Agent Produces
-
-For any company the user queries, the agent returns a **Financial Health Scorecard**:
-
-| Category | Metrics |
-|---|---|
-| **Profitability** | Net profit margin, operating margin, EPS trend |
-| **Liquidity** | Current ratio, quick ratio |
-| **Leverage** | Debt-to-equity ratio |
-| **Growth** | YoY revenue and earnings growth |
-| **Verdict** | Plain-English summary: Healthy / Watch / Concerning |
-
-**Example query:** *"Is Infosys financially healthy compared to last year?"*
-
-**Example output:**
-```
-📊 Financial Health Scorecard — Infosys (INFY)
-
-Profitability  : Net margin 17.2% ↑ | Operating margin 21.4%
-Liquidity      : Current ratio 2.1 (Healthy)
-Leverage       : Debt-to-equity 0.09 (Very low risk)
-Growth         : Revenue +6.2% YoY | EPS +8.4% YoY
-
-Verdict: Infosys shows strong financial health with low debt, 
-improving margins, and consistent earnings growth. The company 
-is well-positioned with minimal leverage risk.
+User Query (natural language)
+        │
+        ▼
+┌──────────────────────────────┐
+│   ADK Agent (Gemini 2.5)    │  Orchestrates tool calls, applies
+│   agent/agent.py            │  thresholds, formats scorecard
+└──────────────┬───────────────┘
+               │ stdio / Cloud Run HTTPS
+               ▼
+┌──────────────────────────────┐
+│   MCP Server (FastMCP)      │  5 tools exposed via MCP protocol
+│   mcp_server/server.py      │
+└────┬─────────────┬───────────┘
+     │             │
+     ▼             ▼
+┌─────────┐  ┌────────────────┐
+│ FMP API │  │   BigQuery     │
+│ (live)  │  │ (snapshots +   │
+│         │  │  YoY history)  │
+└─────────┘  └────────────────┘
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## 📊 Sample Output
 
-| Component | Technology |
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 Financial Health Scorecard — Apple Inc. (AAPL)
+   Sector: Technology | As of: 2024-09-28
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💰 PROFITABILITY
+   Net Margin         → 23.97%  [Strong]
+   Operating Margin   → 31.51%  [Strong]
+   ROE                → 160.58% [Strong]
+   EPS (latest/prior) → $6.11 / $6.16
+
+💧 LIQUIDITY
+   Current Ratio      → 0.87  [Watch]
+   Quick Ratio        → 0.83  [Watch]
+
+🏗️  LEVERAGE
+   Debt / Equity      → 1.87  [High risk]
+   Interest Coverage  → 32.4× [Safe]
+
+📈 GROWTH (Year-over-Year)
+   Revenue            → +2.0%  [Low]
+   Net Income         → +3.3%
+   EPS                → -0.8%  [Declining]
+
+💵 CASH FLOW
+   Operating CF       → $118.25B
+   Free Cash Flow     → $108.81B  [Healthy]
+
+🏆 PEER BENCHMARKING
+   vs MSFT: P/E 35.2 vs 29.1 | Net Margin 35.9% vs 24.0%
+   vs GOOGL: ROE 31.4% vs 160.6%
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ VERDICT: Healthy
+   Apple demonstrates exceptional profitability and cash generation
+   with $108B in free cash flow. While liquidity ratios are below
+   typical benchmarks, this is by design given Apple's capital
+   return programme. Revenue growth is modest, but margins remain
+   best-in-class for the sector.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Disclaimer: For informational purposes only. Not financial advice.
+```
+
+---
+
+## 🛠️ MCP Tools
+
+| Tool | Description |
 |---|---|
-| Agent framework | Google ADK |
-| MCP server | FastMCP (Python) |
-| Financial data | Financial Modeling Prep API (free tier) |
-| Historical storage | Google BigQuery |
-| Deployment | Google Cloud Run |
-| Auth | IAM service accounts |
-| Language | Python 3.11+ |
+| `get_financials(ticker)` | Income statement, balance sheet, cash flow + computed ratios (margins, current/quick ratio, D/E) for last 3 periods |
+| `get_ratios(ticker)` | P/E, P/B, EV/EBITDA, ROE, ROA, interest coverage, dividend yield |
+| `get_peers_comparison(ticker)` | Sector peer list with key metrics for benchmarking |
+| `save_snapshot(ticker, scorecard)` | Persists scorecard to BigQuery for historical tracking |
+| `get_historical(ticker)` | Retrieves past 5 snapshots for YoY trend analysis |
 
 ---
 
@@ -105,63 +117,24 @@ is well-positioned with minimal leverage risk.
 ```
 financial-health-agent/
 ├── agent/
-│   └── agent.py              # ADK agent definition + MCP client config
+│   ├── __init__.py
+│   └── agent.py              # ADK agent: MCP client config + system prompt
 ├── mcp_server/
-│   └── server.py             # MCP server with get_financials and get_ratios tools
-├── Dockerfile                # Container config for Cloud Run deployment
-├── requirements.txt          # Python dependencies
+│   └── server.py             # FastMCP server: 5 tools, error handling, BQ cache
+├── Dockerfile                # Multi-stage build for Cloud Run
+├── requirements.txt          # Pinned Python dependencies
+├── test_api.py               # Integration test for all MCP tools
 └── README.md
 ```
 
 ---
 
-## 🚀 Build Roadmap
-
-![alt text](./assets/image-1.png)
-
-### Phase 1 — Project Setup (~1 hour)
-- Create Python project structure
-- Install dependencies: `google-adk`, `fastmcp`, `requests`, `google-cloud-bigquery`
-- Sign up for a free API key at [financialmodelingprep.com](https://financialmodelingprep.com)
-
-### Phase 2 — MCP Server (~2 hours)
-Build two tools in `mcp_server/server.py` using `fastmcp`:
-- `get_financials(ticker)` → calls FMP income statement + balance sheet endpoints
-- `get_ratios(ticker)` → calls FMP key ratios endpoint (P/E, debt/equity, current ratio)
-
-Both tools return clean JSON the agent can reason over.
-
-### Phase 3 — ADK Agent (~2 hours)
-In `agent/agent.py`, define an ADK agent that:
-- Connects to the MCP server as an MCP client
-- Uses a system prompt: *"You are a financial analyst. Given raw financial data, produce a structured health scorecard with Profitability, Liquidity, Leverage, Growth, and a plain-English Verdict."*
-- Handles the full conversation loop
-
-### Phase 4 — BigQuery Cache (~1–2 hours)
-- Create a BigQuery dataset and table: `company_snapshots`
-- After every FMP API call, write the result to BigQuery with a timestamp
-- Add a `get_historical(ticker)` tool to retrieve past snapshots for year-over-year comparisons
-
-### Phase 5 — Deploy to Cloud Run (~2 hours)
-- Write a `Dockerfile` for the MCP server
-- Deploy the MCP server to Cloud Run
-- Configure IAM so only the ADK agent's service account can call it
-- Point the agent to the Cloud Run URL
-
-### Phase 6 — Test and Demo (~1 hour)
-Test with queries such as:
-- *"How is Apple doing financially?"*
-- *"Is Infosys a healthy company?"*
-- *"Compare TCS revenue growth to last year"*
-
----
-
-## ⚙️ Setup and Installation
+## 🚀 Setup and Installation
 
 ### Prerequisites
 - Python 3.11+
 - Google Cloud project with BigQuery and Cloud Run enabled
-- Financial Modeling Prep API key (free tier)
+- [Financial Modeling Prep](https://financialmodelingprep.com) API key (free tier)
 - Google ADK installed
 
 ### 1. Clone the repository
@@ -171,71 +144,107 @@ git clone https://github.com/<your-username>/financial-health-agent.git
 cd financial-health-agent
 ```
 
-### 2. Install dependencies
+### 2. Create a virtual environment and install dependencies
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 ### 3. Set environment variables
 
 ```bash
-export FMP_API_KEY=your_fmp_api_key_here
-export GCP_PROJECT_ID=your_gcp_project_id
-export MCP_SERVER_URL=https://your-cloud-run-url
+cp .env.example .env
+# Edit .env and fill in:
+# FMP_API_KEY=your_fmp_api_key
+# GCP_PROJECT_ID=your_gcp_project_id
 ```
 
-### 4. Run the MCP server locally
+### 4. Run the integration test
 
 ```bash
-python mcp_server/server.py
+python test_api.py AAPL
 ```
 
-### 5. Run the ADK agent
+### 5. Run the agent locally
 
 ```bash
-adk run agent/agent.py
+adk run agent/
 ```
 
 ---
 
 ## ☁️ Cloud Run Deployment
 
+### Create BigQuery table
+
 ```bash
-# Build and push Docker image
+bq mk --dataset $GCP_PROJECT_ID:financial_health_agent
+
+bq mk --table \
+  $GCP_PROJECT_ID:financial_health_agent.company_snapshots \
+  ticker:STRING,snapshot_date:DATE,created_at:TIMESTAMP,scorecard:STRING
+```
+
+### Build and deploy the MCP server
+
+```bash
+# Build Docker image
 gcloud builds submit --tag gcr.io/$GCP_PROJECT_ID/financial-mcp-server
 
-# Deploy to Cloud Run
+# Deploy to Cloud Run (private — no public access)
 gcloud run deploy financial-mcp-server \
   --image gcr.io/$GCP_PROJECT_ID/financial-mcp-server \
   --platform managed \
   --region asia-south1 \
-  --no-allow-unauthenticated
+  --no-allow-unauthenticated \
+  --set-env-vars FMP_API_KEY=$FMP_API_KEY,GCP_PROJECT_ID=$GCP_PROJECT_ID
+```
+
+### Grant the agent's service account invoke permission
+
+```bash
+gcloud run services add-iam-policy-binding financial-mcp-server \
+  --region asia-south1 \
+  --member="serviceAccount:$AGENT_SA@$GCP_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/run.invoker"
 ```
 
 ---
 
-## 🔐 Authentication
+## 🔐 Security
 
-Service-to-service authentication is handled via **IAM roles**. The ADK agent runs with a service account that has the `roles/run.invoker` role on the Cloud Run MCP server. This ensures no public access to the server — only the agent can call it.
+- The MCP server is deployed with `--no-allow-unauthenticated` — only the ADK agent's service account can invoke it via IAM.
+- The FMP API key is stored as a Cloud Run secret environment variable, never in source code.
+- The Dockerfile uses a non-root user and a minimal slim base image.
+
+---
+
+## 🧠 Agent Reasoning — Analysis Thresholds
+
+The agent's system prompt encodes analyst-grade thresholds so scores are consistently labelled:
+
+| Dimension | Strong | Adequate | Watch/Weak |
+|---|---|---|---|
+| Net Margin | > 15% | 5–15% | < 5% |
+| Operating Margin | > 20% | 10–20% | < 10% |
+| ROE | > 15% | 8–15% | < 8% |
+| Current Ratio | > 2.0 | 1.2–2.0 | < 1.2 |
+| Debt / Equity | < 0.5 | 0.5–1.5 | > 1.5 |
+| Revenue Growth | > 10% | 3–10% | < 3% |
 
 ---
 
 ## 🗂️ Skills Demonstrated
 
-This project directly applies skills from both tracks of the GenAI Academy APAC Edition:
-
-| Track | Skill Applied |
+| Category | Skill |
 |---|---|
-| Track 1 | ADK agent design, tool-using agents, structured prompting |
-| Track 2 | MCP server implementation, BigQuery integration, Cloud Run deployment, IAM auth |
-
----
-
-## 🌐 Live Demo
-
-- **Cloud Run URL:** `https://your-cloud-run-url` *(replace after deployment)*
-- **GitHub Repository:** `https://github.com/<your-username>/financial-health-agent`
+| AI Agent Design | Google ADK, structured system prompting, tool orchestration |
+| MCP Protocol | FastMCP server, 5 tool definitions, typed inputs/outputs |
+| Data Engineering | FMP REST API, BigQuery insert + parameterised query |
+| Cloud Deployment | Cloud Run, Docker multi-stage build, IAM service-to-service auth |
+| Financial Analysis | Income statement parsing, ratio computation, peer benchmarking |
 
 ---
 

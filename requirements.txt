@@ -1,4 +1,14 @@
-google-adk
-fastmcp
-requests
-google-cloud-bigquery
+# ── MCP Server ────────────────────────────────────────────────────────────────
+fastmcp>=2.0.0
+requests>=2.31.0
+
+# ── ADK Agent ─────────────────────────────────────────────────────────────────
+google-adk>=1.0.0
+python-dotenv>=1.0.0
+
+# ── BigQuery (optional — required for save_snapshot / get_historical) ─────────
+google-cloud-bigquery>=3.0.0
+
+# ── Auth (required for Vertex AI backend) ─────────────────────────────────────
+google-auth>=2.0.0
+google-auth-httplib2>=0.2.0
