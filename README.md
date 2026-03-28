@@ -8,7 +8,7 @@
 
 Built for the **GenAI Academy APAC Edition — Track 2: Connect AI agents to real-world data and tools using MCP**.
 
-https://financial-health-agent-867517772734.asia-south1.run.app/
+[Live URL: https://financial-health-agent-867517772734.asia-south1.run.app/](https://financial-health-agent-rnnako34vq-el.a.run.app/)
 
 The agent accepts a natural-language query (e.g. *"Is Apple financially healthy?"* or *"Analyse Infosys vs its peers"*), resolves the ticker, fetches structured financial data through a dedicated MCP server, and returns a **five-dimension scorecard** covering Profitability, Liquidity, Leverage, Growth, and Cash Flow — benchmarked against sector peers.
 
