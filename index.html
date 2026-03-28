@@ -839,7 +839,7 @@
       const res = await fetch(`${API_BASE}/apps/${APP_NAME}/users/${USER_ID}/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
+        body: JSON.stringify({ state: {} })
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -890,10 +890,13 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          appName:   APP_NAME,
-          userId:    USER_ID,
-          sessionId: SESSION_ID,
-          prompt: text
+          app_name:   APP_NAME,
+          user_id:    USER_ID,
+          session_id: SESSION_ID,
+          new_message: {
+            role: "user",
+            parts: [{ text: text }]
+          }
         })
       });
 
@@ -931,19 +934,16 @@
     const tools   = [];
 
     for (const ev of events) {
-      // ADK event shapes vary; try common paths
-      const author = ev.author || ev.role || '';
-      const parts  = ev.content?.parts || ev.parts || [];
-
+      const author = ev.author || '';
+      // Skip user turns and model's intermediate tool-call turns
       if (author === 'user') continue;
 
+      const parts = ev.content?.parts || [];
       for (const part of parts) {
-        if (part.text) {
-          finalText += part.text;
-        }
-        if (part.functionCall) {
-          tools.push(part.functionCall.name);
-        }
+        // Final text response from the agent
+        if (part.text) finalText += part.text;
+        // Track tool calls for display pills
+        if (part.functionCall) tools.push(part.functionCall.name);
       }
     }
 
