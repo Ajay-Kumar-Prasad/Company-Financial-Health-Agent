@@ -1,68 +1,60 @@
 """
 Financial Health Agent — Google ADK entry point.
 
-The agent connects to the Financial Health MCP server via stdio.
-ADK spawns server.py as a subprocess automatically — no separate
-server process needs to be started.
+The agent connects to the Financial Health MCP server via HTTP transport.
+The MCP server (server.py) must be deployed as a separate Cloud Run service
+with TRANSPORT=http.
 
-Run (from financial_health_agent/ directory):
-    python main.py               # Cloud Shell / remote — recommended
-    adk web                      # local only (CORS issues in Cloud Shell)
-    adk run agent                # Interactive CLI
+Run locally:
+    MCP_SERVER_URL=http://localhost:8080/mcp python main.py
 
-Environment variables (set in .env or shell):
-    FMP_API_KEY             — Financial Modeling Prep API key  (required)
-    GCP_PROJECT_ID          — GCP project for BigQuery snapshots (optional)
-    MCP_SERVER_PATH         — Override path to server.py        (optional)
-    GOOGLE_CLOUD_PROJECT    — GCP project for Vertex AI         (required)
-    GOOGLE_CLOUD_LOCATION   — e.g. us-central1                  (required)
-    GOOGLE_GENAI_USE_VERTEXAI — set to "1" for Vertex AI        (required)
+Environment variables:
+    FMP_API_KEY               — Financial Modeling Prep API key  (required, for MCP server)
+    MCP_SERVER_URL            — Full URL to MCP server's /mcp endpoint (required)
+                                e.g. https://financial-health-mcp-xxx.run.app/mcp
+    GOOGLE_CLOUD_PROJECT      — GCP project for Vertex AI         (required)
+    GOOGLE_CLOUD_LOCATION     — e.g. us-central1                  (required)
+    GOOGLE_GENAI_USE_VERTEXAI — set to "1" for Vertex AI          (required)
+    GCP_PROJECT_ID            — GCP project for BigQuery snapshots (optional, for MCP server)
 """
 
 import os
 import dotenv
+from google.auth.transport.requests import Request
+from google.oauth2 import id_token
 
 from google.adk.agents import Agent
-from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, StdioConnectionParams
-from mcp import StdioServerParameters
+from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, SseConnectionParams
 
 # Load .env from this file's directory
 dotenv.load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
-# ── MCP Server path resolution ─────────────────────────────────────────────────
-# Layout (your actual structure):
-#   financial_health_agent/
-#   ├── mcp_server/
-#   │   └── server.py              ← MCP server
-#   └── agent/
-#       └── agent.py               ← this file  (../../mcp_server/server.py)
-_DEFAULT_SERVER_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "mcp_server", "server.py"
-)
+# ── MCP Server URL ─────────────────────────────────────────────────────────────
+# On Cloud Run: set MCP_SERVER_URL to your deployed MCP service URL + /mcp
+# Locally:      run server.py separately with TRANSPORT=http, then set
+#               MCP_SERVER_URL=http://localhost:8080/mcp
+_MCP_SERVER_URL = os.environ.get("MCP_SERVER_URL", "http://localhost:8080/sse")
 
-_MCP_SERVER_PATH = os.path.abspath(
-    os.environ.get("MCP_SERVER_PATH", _DEFAULT_SERVER_PATH)
-)
+def get_auth_headers():
+    """Generates the required Bearer token for Cloud Run-to-Cloud Run communication."""
+    mcp_url = os.environ.get("MCP_SERVER_URL", "")
+    # Audience must be the base URL without the /sse path
+    audience = mcp_url.split("/sse")[0] 
+    
+    auth_req = Request()
+    # This automatically gets the token from the Cloud Run Service Account
+    token = id_token.fetch_id_token(auth_req, audience)
+    return {"Authorization": f"Bearer {token}"}
 
-if not os.path.exists(_MCP_SERVER_PATH):
-    raise FileNotFoundError(
-        f"MCP server not found at: {_MCP_SERVER_PATH}\n"
-        "Set the MCP_SERVER_PATH env var to the correct absolute path."
-    )
+# When creating your MCP Toolset, pass these headers
+# Example (adjust based on your actual SDK usage):
+# mcp_toolset = MCPToolset(url=os.environ["MCP_SERVER_URL"], headers=get_auth_headers())
 
-# ── MCP Toolset (stdio transport) ─────────────────────────────────────────────
+# ── MCP Toolset (HTTP transport) ───────────────────────────────────────────────
 mcp_toolset = MCPToolset(
-    connection_params=StdioConnectionParams(
-        server_params=StdioServerParameters(
-            command="python",
-            args=[_MCP_SERVER_PATH],
-            env={
-                **os.environ,
-                "FMP_API_KEY":    os.environ.get("FMP_API_KEY", ""),
-                "GCP_PROJECT_ID": os.environ.get("GCP_PROJECT_ID", ""),
-                "TRANSPORT":      "stdio",
-            },
-        )
+    connection_params=SseConnectionParams(
+        url=_MCP_SERVER_URL,
+        headers=get_auth_headers()
     )
 )
 
@@ -127,7 +119,6 @@ a user asks about.
 
 Produce the scorecard EXACTLY ONCE using this structure.
 The header line must always include: Company Name | TICKER | Sector | Period date
-
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 Financial Health Scorecard

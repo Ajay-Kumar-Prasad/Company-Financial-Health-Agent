@@ -29,9 +29,12 @@ from typing import Optional
 import time
 import requests
 from fastmcp import FastMCP
+from starlette.responses import JSONResponse
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
+_health_app = None
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 FMP_BASE        = "https://financialmodelingprep.com/stable"
@@ -39,7 +42,7 @@ API_KEY         = os.environ.get("FMP_API_KEY", "")
 GCP_PROJECT     = os.environ.get("GCP_PROJECT_ID", "")
 BQ_DATASET      = "financial_health_agent"
 BQ_TABLE        = "company_snapshots"
-REQUEST_TIMEOUT = 10  # seconds
+REQUEST_TIMEOUT = 25  # seconds
 
 # ── FastMCP server instance ────────────────────────────────────────────────────
 mcp = FastMCP(
@@ -51,7 +54,6 @@ mcp = FastMCP(
         "when presenting data."
     ),
 )
-
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -397,13 +399,10 @@ if __name__ == "__main__":
     transport = os.environ.get("TRANSPORT", "stdio").lower()
 
     if transport == "http":
-        # Remote / Cloud Run — ADK uses StreamableHTTPConnectionParams
         port = int(os.environ.get("PORT", 8080))
-        logger.info(f"Starting Financial Health MCP Server (HTTP) on port {port}")
-        mcp.run(transport="streamable-http", host="0.0.0.0", port=port)
+        logger.info(f"Starting MCP Server (SSE) on port {port}")
+        # Use SSE transport instead of streamable-http
+        mcp.run(transport="sse", host="0.0.0.0", port=port, path="/sse")
     else:
-        # Local / subprocess — ADK spawns this via StdioConnectionParams (default)
-        # IMPORTANT: silence all logging before mcp.run() — any stdout output
-        # before the MCP handshake breaks the stdio protocol.
         logging.disable(logging.CRITICAL)
         mcp.run(transport="stdio")

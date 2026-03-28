@@ -1,14 +1,14 @@
-# ── MCP Server ────────────────────────────────────────────────────────────────
-fastmcp>=2.0.0
-requests>=2.31.0
-
-# ── ADK Agent ─────────────────────────────────────────────────────────────────
 google-adk>=1.0.0
+requests>=2.31.0
 python-dotenv>=1.0.0
-
-# ── BigQuery (optional — required for save_snapshot / get_historical) ─────────
+httpx>=0.27.0
+aiosqlite>=0.20.0
+uvicorn[standard]>=0.29.0
 google-cloud-bigquery>=3.0.0
-
-# ── Auth (required for Vertex AI backend) ─────────────────────────────────────
 google-auth>=2.0.0
 google-auth-httplib2>=0.2.0
+fastmcp>=2.0.0
+# cache bust Sat Mar 28 09:58:43 AM UTC 2026
+# cache bust Sat Mar 28 10:06:20 AM UTC 2026
+# cache bust Sat Mar 28 10:14:26 AM UTC 2026
+# cache bust Sat Mar 28 10:21:38 AM UTC 2026
