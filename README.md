@@ -13,8 +13,8 @@ Built for the **GenAI Academy APAC Edition — Track 2: Connect AI agents to rea
 The agent accepts a natural-language query (e.g. *"Is Apple financially healthy?"* or *"Analyse Infosys vs its peers"*), resolves the ticker, fetches structured financial data through a dedicated MCP server, and returns a **five-dimension scorecard** covering Profitability, Liquidity, Leverage, Growth, and Cash Flow — benchmarked against sector peers.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/12136c83-4b50-40a2-9fa0-d67855fb516a" width="45%" />
-  <img src="https://github.com/user-attachments/assets/c55d2801-6507-472b-b19a-c7b553d0d2d1" width="45%" />
+  <img src="./assets/Demo1.png" width="45%" />
+  <img src="./assets/Demo2.png" width="45%" />
 </p>
 
 ---
