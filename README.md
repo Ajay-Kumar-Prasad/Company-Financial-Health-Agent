@@ -35,7 +35,7 @@ The agent accepts a natural-language query (e.g. *"Is Apple financially healthy?
 ## 🏗️ System Architecture
 
 <p align="center">
-  <img alt="image" src="https://github.com/user-attachments/assets/d92baa60-8130-45b1-887e-8a4979e67d47" />
+  <img alt="image" src="./assets/Picture1.png" />
 </p>
 
 ---
